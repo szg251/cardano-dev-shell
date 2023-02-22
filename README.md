@@ -1,10 +1,11 @@
 # How to use this
 
-- You have to clone [cardano-configurations](https://github.com/input-output-hk/cardano-configurations) somewhere and use an absolute path to it in your configuration.
-- You can set up a dev environment with cardano-node, ogmios, ogmios-datum-cache, kupo (optional) and ctl-server (optional) using this flake.
+- You have to clone [cardano-configurations](https://github.com/input-output-hk/cardano-configurations) somewhere and use an absolute path to it in your configuration
+- You can set up a dev environment with cardano-node, ogmios, ogmios-datum-cache, kupo (optional) and ctl-server (optional) using the template below
 - Use `nix develop` to spin up a shell, then use `start-node`, `start-ogmios`, `start-datum-cache`, `start-kupo` or `start-ctl-server` to start the applications
 - Use `start-postgres` (hacky implementation) to create a docker container with postgres (required by ogmios-datum-cache) *Note: docker is not included in the flake*
 
+*flake.nix*
 ```nix
 {
   inputs = {
