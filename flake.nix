@@ -145,6 +145,7 @@
           cardano-node'
           cardano-cli'
           ogmios'
+          kupo'
           ogmios-datum-cache'
           ctl-server
         ];
