@@ -7,7 +7,7 @@
       , cardano-node
       , cardano-transaction-lib
       , ogmios
-      , ogmios-datum-cache
+      , ogmios-datum-cache ? null
       , kupo ? null
       , NETWORK
       , TM
@@ -26,7 +26,7 @@
         cardano-cli' = cardano-node.packages.${system}.cardano-cli;
         ogmios' = ogmios.packages.${system}."ogmios:exe:ogmios";
         kupo' = if isNull kupo then null else kupo.packages.${system}.kupo;
-        ogmios-datum-cache' = ogmios-datum-cache.packages.${system}.ogmios-datum-cache;
+        ogmios-datum-cache' = if isNull ogmios-datum-cache then null else ogmios-datum-cache.packages.${system}.ogmios-datum-cache;
         ctl-server =
           let ctlPkgs = cardano-transaction-lib.packages.${system};
           in if builtins.hasAttr "ctl-server:exe:ctl-server" ctlPkgs
@@ -68,23 +68,26 @@
           };
 
 
-        start-datum-cache = pkgs.writeShellApplication
-          {
-            name = "start-datum-cache";
-            runtimeInputs = [ ogmios-datum-cache ];
-            text = ''
-              ogmios-datum-cache \
-                --db-port 5432 \
-                --db-host 127.0.0.1 \
-                --db-user postgres \
-                --db-name postgres \
-                --ogmios-port 1337 \
-                --ogmios-address 127.0.0.1 \
-                --db-password password \
-                --server-api user:pass \
-                --server-port 9999
-            '';
-          };
+        start-datum-cache =
+          if isNull ogmios-datum-cache' then null
+          else
+            pkgs.writeShellApplication
+              {
+                name = "start-datum-cache";
+                runtimeInputs = [ ogmios-datum-cache ];
+                text = ''
+                  ogmios-datum-cache \
+                    --db-port 5432 \
+                    --db-host 127.0.0.1 \
+                    --db-user postgres \
+                    --db-name postgres \
+                    --ogmios-port 1337 \
+                    --ogmios-address 127.0.0.1 \
+                    --db-password password \
+                    --server-api user:pass \
+                    --server-port 9999
+                '';
+              };
 
         start-postgres = pkgs.writeShellApplication {
           name = "start-postgres";
@@ -101,8 +104,7 @@
         };
 
         start-kupo =
-          if isNull kupo'
-          then null
+          if isNull kupo' then null
           else
             pkgs.writeShellApplication
               {
