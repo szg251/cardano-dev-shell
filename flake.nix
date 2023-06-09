@@ -18,6 +18,7 @@
       , DATA_DIR ? "${DATA_ROOT_DIR}/${NETWORK}"
       , KUPO_WORKDIR ? "${DATA_DIR}/kupo"
       , CARDANO_NODE_SOCKET_PATH ? "${DATA_DIR}/node.socket"
+      , CARDANO_NODE_NETWORK_ID ? TM
       }:
       let
         pkgs = nixpkgs.legacyPackages.${system};
@@ -134,7 +135,7 @@
               };
       in
       {
-        inherit CARDANO_NODE_SOCKET_PATH TM;
+        inherit CARDANO_NODE_SOCKET_PATH CARDANO_NODE_NETWORK_ID TM;
 
         buildInputs = [
           start-node
