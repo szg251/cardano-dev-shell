@@ -25,6 +25,7 @@
 
         cardano-node' = cardano-node.packages.${system}.cardano-node;
         cardano-cli' = cardano-node.packages.${system}.cardano-cli;
+        cardano-testnet' = cardano-node.packages.${system}.cardano-testnet;
         ogmios' = ogmios.packages.${system}."ogmios:exe:ogmios";
         kupo' = if isNull kupo then null else kupo.packages.${system}.kupo;
         ogmios-datum-cache' = if isNull ogmios-datum-cache then null else ogmios-datum-cache.packages.${system}.ogmios-datum-cache;
@@ -147,6 +148,7 @@
           start-kupo
           cardano-node'
           cardano-cli'
+          cardano-testnet'
           ogmios'
           kupo'
           ogmios-datum-cache'
