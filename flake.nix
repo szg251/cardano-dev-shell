@@ -140,10 +140,10 @@
       {
         inherit CARDANO_NODE_SOCKET_PATH CARDANO_NODE_NETWORK_ID TM;
 
-        CARDANO_NODE = "${cardano-node'}";
-        CARDANO_CLI = "${cardano-cli'}";
-        CARDANO_SUBMIT_API = "${cardano-submit-api'}";
-        CARDANO_NODE_CHAIRMAN = "${cardano-node-chairman'}";
+        CARDANO_NODE = "${cardano-node'}/bin/cardano-node";
+        CARDANO_CLI = "${cardano-cli'}/bin/cardano-cli";
+        CARDANO_SUBMIT_API = "${cardano-submit-api'}/bin/cardano-submit-api";
+        CARDANO_NODE_CHAIRMAN = "${cardano-node-chairman'}/bin/cardano-node-chairman";
 
         buildInputs = [
           start-node
