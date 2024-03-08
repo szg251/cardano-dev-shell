@@ -26,6 +26,8 @@
         cardano-node' = cardano-node.packages.${system}.cardano-node;
         cardano-cli' = cardano-node.packages.${system}.cardano-cli;
         cardano-testnet' = cardano-node.packages.${system}.cardano-testnet;
+        cardano-submit-api' = cardano-node.packages.${system}.cardano-submit-api;
+        cardano-node-chairmain' = cardano-node.packages.${system}.cardano-node-chairmain;
         ogmios' = ogmios.packages.${system}."ogmios:exe:ogmios";
         kupo' = if isNull kupo then null else kupo.packages.${system}.kupo;
         ogmios-datum-cache' = if isNull ogmios-datum-cache then null else ogmios-datum-cache.packages.${system}.ogmios-datum-cache;
@@ -138,6 +140,11 @@
       {
         inherit CARDANO_NODE_SOCKET_PATH CARDANO_NODE_NETWORK_ID TM;
 
+        CARDANO_NODE = "${cardano-node'}";
+        CARDANO_CLI = "${cardano-cli'}";
+        CARDANO_SUBMIT_API = "${cardano-submit-api'}";
+        CARDANO_NODE_CHAIRMAN = "${cardano-node-chairmain'}";
+
         buildInputs = [
           start-node
           start-ogmios
@@ -149,6 +156,8 @@
           cardano-node'
           cardano-cli'
           cardano-testnet'
+          cardano-node-chairmain'
+          cardano-submit-api'
           ogmios'
           kupo'
           ogmios-datum-cache'
