@@ -67,7 +67,8 @@
                 --node-socket "${CARDANO_NODE_SOCKET_PATH}" \
                 --node-config "${CONFIG_DIR}/config.json" \
                 --port 1337 \
-                --log-level Debug
+                --log-level Debug \
+                --timeout 180
             '';
           };
 
