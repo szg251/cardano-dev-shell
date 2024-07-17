@@ -5,8 +5,8 @@
       { system
       , nixpkgs
       , cardano-node
-      , cardano-transaction-lib
-      , ogmios
+      , cardano-transaction-lib ? null
+      , ogmios ? null
       , ogmios-datum-cache ? null
       , kupo ? null
       , NETWORK
@@ -21,6 +21,7 @@
       , CARDANO_NODE_NETWORK_ID ? TM
       }:
       let
+        optional = option: value: if isNull option then null else value;
         pkgs = nixpkgs.legacyPackages.${system};
 
         cardano-node' = cardano-node.packages.${system}.cardano-node;
@@ -28,13 +29,12 @@
         cardano-testnet' = cardano-node.packages.${system}.cardano-testnet;
         cardano-submit-api' = cardano-node.packages.${system}.cardano-submit-api;
         cardano-node-chairman' = cardano-node.packages.${system}.cardano-node-chairman;
-        ogmios' = ogmios.packages.${system}."ogmios:exe:ogmios";
-        kupo' = if isNull kupo then null else kupo.packages.${system}.kupo;
+        ogmios' = optional ogmios ogmios.packages.${system}."ogmios:exe:ogmios";
+        kupo' = optional kupo kupo.packages.${system}.kupo;
         ogmios-datum-cache' = if isNull ogmios-datum-cache then null else ogmios-datum-cache.packages.${system}.ogmios-datum-cache;
         ctl-server =
-          let ctlPkgs = cardano-transaction-lib.packages.${system};
-          in if builtins.hasAttr "ctl-server:exe:ctl-server" ctlPkgs
-          then ctlPkgs."ctl-server:exe:ctl-server"
+          if !(isNull cardano-transaction-lib) && builtins.hasAttr "ctl-server:exe:ctl-server" cardano-transaction-lib.packages.${system}
+          then cardano-transaction-lib.packages.${system}."ctl-server:exe:ctl-server"
           else null;
 
         start-node = pkgs.writeShellApplication
@@ -55,28 +55,29 @@
             '';
           };
 
-        start-ogmios = pkgs.writeShellApplication
-          {
-            name = "start-ogmios";
-            runtimeInputs = [ ogmios ];
-            text = ''
-              export CONFIG_DIR=${CONFIG_DIR}
-              export CARDANO_NODE_SOCKET_PATH=${CARDANO_NODE_SOCKET_PATH}
+        start-ogmios =
+          optional ogmios'
+            (pkgs.writeShellApplication
+              {
+                name = "start-ogmios";
+                runtimeInputs = [ ogmios ];
+                text = ''
+                  export CONFIG_DIR=${CONFIG_DIR}
+                  export CARDANO_NODE_SOCKET_PATH=${CARDANO_NODE_SOCKET_PATH}
 
-              ogmios \
-                --node-socket "${CARDANO_NODE_SOCKET_PATH}" \
-                --node-config "${CONFIG_DIR}/config.json" \
-                --port 1337 \
-                --log-level Debug \
-                --timeout 180
-            '';
-          };
+                  ogmios \
+                    --node-socket "${CARDANO_NODE_SOCKET_PATH}" \
+                    --node-config "${CONFIG_DIR}/config.json" \
+                    --port 1337 \
+                    --log-level Debug \
+                    --timeout 180
+                '';
+              });
 
 
         start-datum-cache =
-          if isNull ogmios-datum-cache' then null
-          else
-            pkgs.writeShellApplication
+          optional ogmios-datum-cache'
+            (pkgs.writeShellApplication
               {
                 name = "start-datum-cache";
                 runtimeInputs = [ ogmios-datum-cache ];
@@ -92,7 +93,7 @@
                     --server-api user:pass \
                     --server-port 9999
                 '';
-              };
+              });
 
         start-postgres = pkgs.writeShellApplication {
           name = "start-postgres";
@@ -109,9 +110,8 @@
         };
 
         start-kupo =
-          if isNull kupo' then null
-          else
-            pkgs.writeShellApplication
+          optional kupo'
+            (pkgs.writeShellApplication
               {
                 name = "start-kupo";
                 runtimeInputs = [ kupo' ];
@@ -125,18 +125,16 @@
                     --since origin \
                     --defer-db-indexes
                 '';
-              };
+              });
 
         start-ctl-server =
-          if isNull ctl-server
-          then null
-          else
-            pkgs.writeShellApplication
+          optional ctl-server
+            (pkgs.writeShellApplication
               {
                 name = "start-ctl-server";
                 runtimeInputs = [ ctl-server ];
                 text = "ctl-server";
-              };
+              });
       in
       {
         inherit CARDANO_NODE_SOCKET_PATH CARDANO_NODE_NETWORK_ID TM;
