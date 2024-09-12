@@ -19,6 +19,7 @@
       , KUPO_WORKDIR ? "${DATA_DIR}/kupo"
       , CARDANO_NODE_SOCKET_PATH ? "${DATA_DIR}/node.socket"
       , CARDANO_NODE_NETWORK_ID ? TM
+      , DEVNET_DIR ? "${DATA_DIR}/devnet"
       }:
       let
         optional = option: value: if isNull option then null else value;
@@ -37,6 +38,33 @@
           then cardano-transaction-lib.packages.${system}."ctl-server:exe:ctl-server"
           else null;
 
+        prepare-devnet = pkgs.writeShellApplication
+          {
+            name = "prepare-devnet";
+            runtimeInputs = [ cardano-node ];
+            text = ''
+              # Prepare a "devnet" directory holding credentials, a dummy topology and
+              # "up-to-date" genesis files. If the directory exists, it is wiped out.
+              set -eo pipefail
+
+              [ -d "${DATA_DIR}" ] && { echo "Cleaning up directory ${DATA_DIR}" ; rm -rf "${DATA_DIR}" ; }
+              [ -d "${DEVNET_DIR}" ] && { echo "Cleaning up directory ${DEVNET_DIR}" ; rm -rf "${DEVNET_DIR}" ; }
+
+              mkdir -p ${DEVNET_DIR}
+
+              cp -af ${./devnet}/* "${DEVNET_DIR}"
+              
+              echo '{"Producers": []}' > "${DEVNET_DIR}/topology.json"
+              sed -i.bak "s/\"startTime\": [0-9]*/\"startTime\": $(date +%s)/" "${DEVNET_DIR}/genesis-byron.json" && \
+              sed -i.bak "s/\"systemStart\": \".*\"/\"systemStart\": \"$(date -u +%FT%TZ)\"/" "${DEVNET_DIR}/genesis-shelley.json"
+
+              find "${DEVNET_DIR}" -type f -name '*.skey' -exec chmod 0400 {} \;
+              mkdir "${DEVNET_DIR}/ipc"
+              echo "Prepared devnet, you can start the cluster now"
+
+            '';
+          };
+
         start-node = pkgs.writeShellApplication
           {
             name = "start-node";
@@ -51,7 +79,15 @@
                 --database-path "${DATA_DIR}/chain" \
                 --socket-path "${CARDANO_NODE_SOCKET_PATH}" \
                 --port 3001 \
-                --config "${CONFIG_DIR}/config.json"
+                --config "${CONFIG_DIR}/config.json" \
+                ${pkgs.lib.optionalString (NETWORK == "local") ''
+                  --shelley-kes-key "${CONFIG_DIR}/kes.skey" \
+                  --shelley-vrf-key "${CONFIG_DIR}/vrf.skey" \
+                  --shelley-operational-certificate "${CONFIG_DIR}/opcert.cert" \
+                  --byron-delegation-certificate "${CONFIG_DIR}/byron-delegation.cert" \
+                  --byron-signing-key "${CONFIG_DIR}/byron-delegate.key"
+                  ''
+                }
             '';
           };
 
@@ -145,6 +181,7 @@
         CARDANO_NODE_CHAIRMAN = "${cardano-node-chairman'}/bin/cardano-node-chairman";
 
         buildInputs = [
+          prepare-devnet
           start-node
           start-ogmios
           start-postgres
